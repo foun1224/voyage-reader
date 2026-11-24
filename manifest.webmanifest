@@ -1,0 +1,26 @@
+{
+  "name": "航海書庫 · 離線電子書閱讀器",
+  "short_name": "航海書庫",
+  "description": "專為 iPhone 離線閱讀打造的 PDF 與 EPUB 電子書閱讀器，支援大檔低記憶體分塊讀取、智慧切白邊、護眼夜讀與飛航模式 100% 離線使用。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F7F3EC",
+  "theme_color": "#1F2732",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
