@@ -510,9 +510,11 @@ export class PdfReaderController {
     let startY = 0;
     let startTime = 0;
     let lastTapTime = 0;
+    let lastTouchTime = 0;
     let multiTouch = false;
 
     this._onTouchStart = (e) => {
+      lastTouchTime = Date.now();
       if (e.touches.length > 1) {
         multiTouch = true;
         return;
@@ -524,6 +526,7 @@ export class PdfReaderController {
     };
 
     this._onTouchEnd = (e) => {
+      lastTouchTime = Date.now();
       if (multiTouch || e.changedTouches.length !== 1) return;
       if (e.target.closest('button, a, input, textarea')) return;
 
@@ -542,6 +545,21 @@ export class PdfReaderController {
 
       // Tap handling
       if (dt < 260 && Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+        const rect = this.stageEl.getBoundingClientRect();
+        const relX = (endX - rect.left) / Math.max(1, rect.width);
+
+        // Edge taps turn pages immediately when not zoomed in
+        if (this.zoom <= 1.05 && relX < 0.24) {
+          lastTapTime = 0;
+          this.prevPage();
+          return;
+        }
+        if (this.zoom <= 1.05 && relX > 0.76) {
+          lastTapTime = 0;
+          this.nextPage();
+          return;
+        }
+
         const now = Date.now();
         // Double-tap toggles 1x <-> 1.6x zoom in page mode
         if (this.mode === 'page' && now - lastTapTime < 280) {
@@ -551,25 +569,18 @@ export class PdfReaderController {
         }
         lastTapTime = now;
 
-        const rect = this.stageEl.getBoundingClientRect();
-        const relX = (endX - rect.left) / Math.max(1, rect.width);
-        // Delay slightly to distinguish single tap from double tap
+        // Delay slightly to distinguish single tap (toggle HUD) from double tap (zoom)
         setTimeout(() => {
           if (lastTapTime !== now || this.destroyed) return;
-          if (this.zoom <= 1.05 && relX < 0.24) {
-            this.prevPage();
-          } else if (this.zoom <= 1.05 && relX > 0.76) {
-            this.nextPage();
-          } else {
-            this.onToggleHud?.();
-          }
+          this.onToggleHud?.();
         }, 290);
       }
     };
 
     // Desktop click support for testing & Mac/iPad mouse usage
     this._onClick = (e) => {
-      if (e.pointerType === 'touch') return;
+      // iOS Safari dispatches a synthetic MouseEvent click after touchend with pointerType undefined
+      if (e.pointerType === 'touch' || Date.now() - lastTouchTime < 700) return;
       if (e.target.closest('button, a, input, textarea')) return;
       const rect = this.stageEl.getBoundingClientRect();
       const relX = (e.clientX - rect.left) / Math.max(1, rect.width);

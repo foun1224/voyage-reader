@@ -1,5 +1,5 @@
 /* VoyageReader Offline Service Worker */
-const CACHE_NAME = 'voyage-reader-v1.0.0';
+const CACHE_NAME = 'voyage-reader-v1.0.1';
 
 const CORE_ASSETS = [
   './',
