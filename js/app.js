@@ -162,7 +162,7 @@ function syncStatusBarTheme() {
   const metaScheme = $('metaColorScheme');
   if (metaScheme) metaScheme.content = scheme;
 
-  // Replace <meta name="theme-color"> node so iOS Safari / standalone PWA repaints the status bar immediately
+  // Replace <meta name="theme-color"> node for iOS 15-18 & Android
   document.querySelectorAll('meta[name="theme-color"]').forEach((el) => el.remove());
   const nextMeta = document.createElement('meta');
   nextMeta.name = 'theme-color';
@@ -170,9 +170,21 @@ function syncStatusBarTheme() {
   nextMeta.content = bgColor;
   document.head.appendChild(nextMeta);
 
+  // Keep default status-bar style so iOS 27 samples the solid >=6px top fixed strip
   const metaIos = $('metaIosStatus');
   if (metaIos) {
-    metaIos.content = theme === 'night' ? 'black' : 'default';
+    metaIos.content = 'default';
+  }
+
+  // Force iOS 26/27 WebKit sampledPageTopColor refresh on the fixed top strip
+  const statusStrip = document.querySelector('.reader-status-bg');
+  if (statusStrip) {
+    statusStrip.style.backgroundColor = bgColor;
+    statusStrip.style.height = '13px';
+    void statusStrip.offsetHeight;
+    requestAnimationFrame(() => {
+      statusStrip.style.height = '';
+    });
   }
 }
 
@@ -1183,7 +1195,7 @@ async function runOfflineSelfTest() {
         });
         if (msg?.ok) {
           swOk = true;
-          swDetail = `已快取 ${msg.cachedCount} 個核心離線檔案（含 PDF.js 與中文字型表）`;
+          swDetail = `已快取 ${msg.cachedCount} 個核心離線檔案（${msg.cacheName}）`;
         } else {
           swOk = true;
           swDetail = 'Service Worker 已啟動';
@@ -1491,7 +1503,21 @@ function bindEvents() {
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && !reloaded) {
+        reloaded = true;
+        window.location.reload();
+      }
+    });
+    const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    reg.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        reg.update().catch(() => {});
+      }
+    });
   } catch (err) {
     console.warn('[SW registration skipped]', err);
   }
