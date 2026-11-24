@@ -198,6 +198,7 @@ export class PdfReaderController {
     this.stageEl = opts.stageEl;
     this.onPageChange = opts.onPageChange;
     this.onToggleHud = opts.onToggleHud;
+    this.onAutoHideHud = opts.onAutoHideHud;
     this.onOutlineReady = opts.onOutlineReady;
 
     this.handle = null;
@@ -361,15 +362,16 @@ export class PdfReaderController {
     const cropWFrac = Math.max(0.25, crop.right - crop.left);
     const cropHFrac = Math.max(0.2, crop.bottom - crop.top);
 
-    const containerW = Math.max(300, this.stageEl.clientWidth - 8);
-    const containerH = Math.max(400, this.stageEl.clientHeight - 8);
+    const stageStyle = getComputedStyle(this.stageEl);
+    const padX = (parseFloat(stageStyle.paddingLeft) || 0) + (parseFloat(stageStyle.paddingRight) || 0);
+    const padY = (parseFloat(stageStyle.paddingTop) || 0) + (parseFloat(stageStyle.paddingBottom) || 0);
+    const containerW = Math.max(280, this.stageEl.clientWidth - padX);
+    const containerH = Math.max(320, this.stageEl.clientHeight - padY);
 
-    // Fit cropped width cleanly to iPhone screen width (allow vertical scroll if tall or zoomed)
+    // Fit full page cleanly within viewport (fills width on standard portrait books without vertical overflow)
     const cssScaleW = containerW / (baseVp.width * cropWFrac);
     const cssScaleH = containerH / (baseVp.height * cropHFrac);
-    // For portrait mobile screens, fit-to-width makes text maximally legible;
-    // cap by 1.35x fit-to-height on very wide landscape screens
-    const fitScale = containerW > containerH ? Math.min(cssScaleW, cssScaleH * 1.15) : cssScaleW;
+    const fitScale = Math.min(cssScaleW, cssScaleH);
     const finalCssScale = fitScale * this.zoom;
 
     // Cap pixel ratio to 2 to stay crisp on Retina without exploding iOS canvas RAM
@@ -538,6 +540,7 @@ export class PdfReaderController {
 
       // Horizontal swipe to turn pages (only when not zoomed in)
       if (this.zoom <= 1.05 && dt < 450 && Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+        this.onAutoHideHud?.();
         if (dx < 0) this.nextPage();
         else this.prevPage();
         return;
@@ -551,18 +554,20 @@ export class PdfReaderController {
         // Edge taps turn pages immediately when not zoomed in
         if (this.zoom <= 1.05 && relX < 0.24) {
           lastTapTime = 0;
+          this.onAutoHideHud?.();
           this.prevPage();
           return;
         }
         if (this.zoom <= 1.05 && relX > 0.76) {
           lastTapTime = 0;
+          this.onAutoHideHud?.();
           this.nextPage();
           return;
         }
 
         const now = Date.now();
         // Double-tap toggles 1x <-> 1.6x zoom in page mode
-        if (this.mode === 'page' && now - lastTapTime < 280) {
+        if (this.mode === 'page' && now - lastTapTime < 240) {
           lastTapTime = 0;
           this.setZoom(this.zoom > 1.1 ? 1 : 1.6);
           return;
@@ -573,7 +578,7 @@ export class PdfReaderController {
         setTimeout(() => {
           if (lastTapTime !== now || this.destroyed) return;
           this.onToggleHud?.();
-        }, 290);
+        }, 240);
       }
     };
 
@@ -584,9 +589,15 @@ export class PdfReaderController {
       if (e.target.closest('button, a, input, textarea')) return;
       const rect = this.stageEl.getBoundingClientRect();
       const relX = (e.clientX - rect.left) / Math.max(1, rect.width);
-      if (this.zoom <= 1.05 && relX < 0.22) this.prevPage();
-      else if (this.zoom <= 1.05 && relX > 0.78) this.nextPage();
-      else this.onToggleHud?.();
+      if (this.zoom <= 1.05 && relX < 0.22) {
+        this.onAutoHideHud?.();
+        this.prevPage();
+      } else if (this.zoom <= 1.05 && relX > 0.78) {
+        this.onAutoHideHud?.();
+        this.nextPage();
+      } else {
+        this.onToggleHud?.();
+      }
     };
 
     this._onResize = () => {

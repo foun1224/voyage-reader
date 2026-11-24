@@ -1052,6 +1052,10 @@ a {
   padding: calc(var(--safe-top) + 4px) 4px calc(var(--safe-bottom) + 4px);
 }
 
+.reader-overlay.hud-hidden .reader-stage {
+  padding: var(--safe-top) 0 var(--safe-bottom);
+}
+
 .pdf-canvas-wrap {
   margin: auto;
   display: flex;
@@ -1060,11 +1064,20 @@ a {
   padding: 2px 0;
 }
 
+.reader-overlay.hud-hidden .pdf-canvas-wrap {
+  padding: 0;
+}
+
 .pdf-page-canvas {
   display: block;
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.14);
   border-radius: 2px;
   transition: filter 0.18s ease;
+}
+
+.reader-overlay.hud-hidden .pdf-page-canvas {
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* PDF Visual Filters */
@@ -1098,6 +1111,12 @@ a {
   font-family: var(--font-serif);
   color: var(--reader-ink);
   word-break: break-word;
+  transition: padding 0.2s ease;
+}
+
+.reader-overlay.hud-hidden .reflow-article,
+.reader-overlay.hud-hidden .epub-article {
+  padding: 16px 20px 28px;
 }
 
 .reflow-article p,

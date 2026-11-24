@@ -893,7 +893,8 @@ async function openReader(bookId, jumpToPage = null) {
   $('readerBookTitle').textContent = book.title;
   $('readerOverlay').classList.add('open');
   $('readerOverlay').setAttribute('aria-hidden', 'false');
-  setHudVisible(true);
+  setHudVisible(false);
+  showToast('整頁模式 · 點畫面中間顯示／隱藏上下欄', 2200);
 
   const isPdf = book.format !== 'epub';
   $('btnToggleCrop').style.display = isPdf ? 'flex' : 'none';
@@ -937,6 +938,9 @@ async function openReader(bookId, jumpToPage = null) {
     lineHeight: state.settings.lineHeight,
     onPageChange,
     onToggleHud: () => setHudVisible(!state.hudVisible),
+    onAutoHideHud: () => {
+      if (state.hudVisible) setHudVisible(false);
+    },
     onOutlineReady: (outline) => {
       state.activeOutline = outline || [];
     },
@@ -1426,6 +1430,7 @@ function bindEvents() {
   $('btnReaderSettings').addEventListener('click', openReaderSettingsSheet);
   $('btnOpenToc').addEventListener('click', openTocSheet);
   $('btnBookmarkPage').addEventListener('click', openAddBookmarkSheet);
+  $('btnHideHud')?.addEventListener('click', () => setHudVisible(false));
 
   // Sheet backdrop dismiss
   $('sheetBackdrop').addEventListener('click', (e) => {
