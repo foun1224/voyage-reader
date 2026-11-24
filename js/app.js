@@ -140,23 +140,51 @@ function showToast(msg, duration = 2600) {
 
 // ---- Theme Management ----
 
+function syncStatusBarTheme() {
+  const theme = state.settings.theme || 'day';
+  const inReader = $('readerOverlay')?.classList.contains('open');
+  const bgColor =
+    theme === 'night'
+      ? (inReader ? '#0F1116' : '#13161B')
+      : theme === 'sepia'
+        ? (inReader ? '#E9DFCF' : '#ECE4D7')
+        : (inReader ? '#F2EEE7' : '#F6F3EE');
+  const scheme = theme === 'night' ? 'dark' : 'light';
+
+  document.documentElement.style.colorScheme = scheme;
+  document.documentElement.style.backgroundColor = bgColor;
+  if (document.body) {
+    document.body.style.backgroundColor = bgColor;
+  }
+  document.documentElement.classList.toggle('reader-active', !!inReader);
+  document.body?.classList.toggle('reader-active', !!inReader);
+
+  const metaScheme = $('metaColorScheme');
+  if (metaScheme) metaScheme.content = scheme;
+
+  // Replace <meta name="theme-color"> node so iOS Safari / standalone PWA repaints the status bar immediately
+  document.querySelectorAll('meta[name="theme-color"]').forEach((el) => el.remove());
+  const nextMeta = document.createElement('meta');
+  nextMeta.name = 'theme-color';
+  nextMeta.id = 'metaThemeColor';
+  nextMeta.content = bgColor;
+  document.head.appendChild(nextMeta);
+
+  const metaIos = $('metaIosStatus');
+  if (metaIos) {
+    metaIos.content = theme === 'night' ? 'black' : 'default';
+  }
+}
+
 function applyTheme(theme) {
   state.settings.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
   $('readerOverlay').setAttribute('data-pdf-filter', theme);
-  const metaColor = $('metaThemeColor');
-  const metaIos = $('metaIosStatus');
-  if (theme === 'night') {
-    metaColor.content = '#12161D';
-    metaIos.content = 'black';
-  } else if (theme === 'sepia') {
-    metaColor.content = '#EAE0CC';
-    metaIos.content = 'default';
-  } else {
-    metaColor.content = '#F7F3EC';
-    metaIos.content = 'default';
-  }
   $('readerOverlay').classList.toggle('high-contrast', !!state.settings.highContrast);
+  try {
+    localStorage.setItem('voyage_theme', theme);
+  } catch (_) {}
+  syncStatusBarTheme();
   setMeta('settings', state.settings).catch(() => {});
 }
 
@@ -893,6 +921,7 @@ async function openReader(bookId, jumpToPage = null) {
   $('readerBookTitle').textContent = book.title;
   $('readerOverlay').classList.add('open');
   $('readerOverlay').setAttribute('aria-hidden', 'false');
+  syncStatusBarTheme();
   setHudVisible(false);
   showToast('整頁模式 · 點畫面中間顯示／隱藏上下欄', 2200);
 
@@ -976,6 +1005,7 @@ async function closeReader() {
   $('readerStage').innerHTML = '';
   $('readerOverlay').classList.remove('open');
   $('readerOverlay').setAttribute('aria-hidden', 'true');
+  syncStatusBarTheme();
   await reloadData();
 }
 

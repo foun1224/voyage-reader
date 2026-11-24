@@ -5,10 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>航海書庫 · iPhone 離線電子書閱讀器</title>
   <meta name="description" content="專為無網路環境與郵輪旅程設計的 iPhone 離線 PDF 與 EPUB 電子書閱讀器，支援低記憶體分塊讀取、智慧自動切白邊與護眼夜讀。" />
-  <meta name="theme-color" content="#F7F3EC" id="metaThemeColor" />
+  <meta name="theme-color" content="#F6F3EE" id="metaThemeColor" />
+  <meta name="color-scheme" content="light" id="metaColorScheme" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" id="metaIosStatus" />
   <meta name="apple-mobile-web-app-title" content="航海書庫" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('voyage_theme');
+        if (t === 'night' || t === 'sepia' || t === 'day') {
+          document.documentElement.setAttribute('data-theme', t);
+          var c = t === 'night' ? '#13161B' : (t === 'sepia' ? '#ECE4D7' : '#F6F3EE');
+          var s = t === 'night' ? 'dark' : 'light';
+          document.documentElement.style.colorScheme = s;
+          document.documentElement.style.backgroundColor = c;
+          var mc = document.getElementById('metaThemeColor');
+          if (mc) mc.setAttribute('content', c);
+          var ms = document.getElementById('metaColorScheme');
+          if (ms) ms.setAttribute('content', s);
+        }
+      } catch (_) {}
+    })();
+  </script>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" href="./icons/icon-192.png" />
@@ -171,6 +190,7 @@
 
   <!-- Fullscreen Reader Overlay -->
   <div class="reader-overlay" id="readerOverlay" data-pdf-filter="day" aria-hidden="true">
+    <div class="reader-status-bg" aria-hidden="true"></div>
     <div class="reader-topbar">
       <button type="button" class="icon-btn" id="btnCloseReader" aria-label="返回書庫">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>

@@ -61,6 +61,7 @@
 }
 
 [data-theme="night"] {
+  color-scheme: dark;
   --bg: hsl(218, 18%, 9%);
   --bg-subtle: hsl(218, 16%, 13%);
   --surface: hsl(218, 16%, 14%);
@@ -102,6 +103,11 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+}
+
+html.reader-active,
+body.reader-active {
+  background: var(--reader-bg);
 }
 
 button, input, select, textarea {
@@ -998,6 +1004,17 @@ a {
 
 .reader-overlay.open {
   display: flex;
+}
+
+.reader-status-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: max(var(--safe-top), 2px);
+  background: var(--reader-bg);
+  z-index: 105;
+  pointer-events: none;
 }
 
 .reader-topbar {
